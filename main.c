@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <Windows.h>
 #define VERSION "1.0.0"
+#define PANEL_ROWS 20
+#define PANEL_COLS 10
 
 // Copyright ⓒ 2021 황부연 All rights reserved.
 // 2021 호산고등학교 1학년 8반 12번 황부연
@@ -10,6 +13,12 @@ const char *mainString;
 const int menuMax = 1;
 int mainScene();
 void gameScene();
+
+void delay(clock_t s)
+{
+  clock_t start = clock();
+  while(clock() - start < s);
+}
 
 void setColor(unsigned short text, unsigned short back)
 {
@@ -103,7 +112,8 @@ int mainScene()
 		else continue;
 		
 		setColor(15 ,9);
-		system("cls");
+		COORD pos = {0 , 0};
+		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 		
 		printf("\n\n\n\n\n\n\n");
 		printf(mainString);
@@ -125,36 +135,75 @@ int mainScene()
 	}
 }
 
-void putBlock(int (*panel)[10], int row, int col, int rotation, char block)
+// 블록을 선택한 좌표와 각도로 놓습니다. 
+void putBlock(int (*panel)[PANEL_COLS], int row, int col, int rotation, char block)
 {
 	switch (block)
 	{
-		case 'I':
-			panel[row][col] = 2;
-			panel[row-1][col] = 2;
-			panel[row][col-1] = 2;
-			panel[row][col+1] = 2;
+		case 'T':
+			switch (rotation)
+			{
+				case 0:
+					panel[row][col] = 2;
+					panel[row-1][col] = 2;
+					panel[row][col-1] = 2;
+					panel[row][col+1] = 2;
+					break;
+				case 1:
+					panel[row][col] = 2;
+					panel[row+1][col] = 2;
+					panel[row-1][col] = 2;
+					panel[row][col+1] = 2;
+					break;
+				case 2:
+					panel[row][col] = 2;
+					panel[row+1][col] = 2;
+					panel[row][col-1] = 2;
+					panel[row][col+1] = 2;
+					break;
+				case 3:
+					panel[row][col] = 2;
+					panel[row+1][col] = 2;
+					panel[row-1][col] = 2;
+					panel[row][col-1] = 2;
+					break;
+			}
+			
 			break;
 			
 	}
 }
 
-void refreshPanel(int (*panel)[10]) 
+// 활성 블록을 제거합니다. 
+void clearActiveBlock(int (*panel)[PANEL_COLS])
+{
+	int row, col;
+	for (row = 0; row < PANEL_ROWS; row++)
+	{
+		for (col = 0; col < PANEL_COLS; col++)
+		{
+			if (panel[row][col] == 2) panel[row][col] = 0;
+		}
+	}	
+} 
+
+// 현재 패널을 읽어들여 새로고침합니다. 
+void refreshPanel(int (*panel)[PANEL_COLS]) 
 {
 	COORD pos = {0 , 0};
 	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
-	char *tsp = "                                       ";
+	char *tsp = "                       ";
 	printf("\n\n\n\n\n\n\n\n\n");
 	printf("%s▩▩▩▩▩▩▩▩▩▩▩▩\n", tsp);
 	
 	int row, col;
-	for (row = 0; row < 20; row++)
+	for (row = 0; row < PANEL_ROWS; row++)
 	{
 		printf("%s▩", tsp);
-		for (col = 0; col < 10; col++)
+		for (col = 0; col < PANEL_COLS; col++)
 		{
-			if (panel[row][col] == 1) printf("▩");
-			if (panel[row][col] == 2) printf("■");
+			if (panel[row][col] == 1) printf("□");
+			else if (panel[row][col] == 2) printf("■");
 			else printf("  ");
 		}
 		printf("▩\n");
@@ -162,18 +211,121 @@ void refreshPanel(int (*panel)[10])
 	printf("%s▩▩▩▩▩▩▩▩▩▩▩▩\n", tsp);
 }
 
+/*
+이 함수는 활성 블럭이 벽이나 다른 블럭에 닿아 있는지 여부를 검사합니다.
+위에 닿은 경우: 0x1, 오른쪽에 닿은 경우: 0x2, 아래에 닿은 경우: 0x4, 왼쪽에 닿은 경우: 0x8 의 논리합(OR) 연산으로 리턴됩니다. 
+*/
+int checkTouchWall(int (*panel)[PANEL_COLS])
+{
+	int minRow = -1;
+	int maxRow = -1;
+	int minCol = -1;
+	int maxCol = -1;
+	
+	int row, col;
+	for (row = 0; row < PANEL_ROWS; row++)
+	{
+		for (col = 0; col < PANEL_COLS; col++)
+		{
+			if (panel[row][col] == 2)
+			{
+				if (minRow == -1 || row < minRow) minRow = row;
+				if (minCol == -1 || col < minCol) minCol = col;
+				
+				if (maxRow == -1 || row > maxRow) maxRow = row;
+				if (maxCol == -1 || col > maxCol) maxCol = col;
+			}
+		}
+	}
+	
+	int result = 0;
+	
+	// minRow가 0인 경우, 즉 블록이 천장벽과 닿는 경우는 구현하지 않음. 
+	if (minCol == 0) // 왼쪽 벽과 닿는 경우 
+	{
+		result |= 0x8;
+	}
+	if (maxRow == PANEL_ROWS - 1) // 바닥과 닿는 경우 
+	{
+		result |= 0x4;
+	}
+	if (maxCol == PANEL_COLS - 1) // 오른쪽 벽과 닿는 경우 
+	{
+		result |= 0x2;
+	}
+	
+	return result;
+}
+
+// 활성 블록을 확정하여 고정합니다. 
+void comfirmActiveBlocks(int (*panel)[PANEL_COLS])
+{
+	int row, col;
+	for (row = 0; row < PANEL_ROWS; row++)
+	{
+		for (col = 0; col < PANEL_COLS; col++)
+		{
+			if (panel[row][col] == 2) panel[row][col] = 1;
+		}
+	}
+}
+
 void gameScene()
 {
 	system("cls");
-	system("color 0f");
-	int panel[20][10] = {0};
+	system("mode con cols=100 lines=40 | color 0f");
+	int panel[PANEL_ROWS][PANEL_COLS] = {0};
 	char currentBlock;
-	int currentPos[2] = {0, 4};
-	int currentRotation = 0;
+	int currentPos[2] = {1, 4}; // 현재 블록 좌표 
+	int currentRotation = 0; // 현재 블록 회전각(시계방향으로 0, 1, 2, 3)
 	
 	refreshPanel(panel);
-	putBlock(panel, currentPos[0], currentPos[1], currentRotation, 'I');
-	refreshPanel(panel);
-	putBlock(panel, 10, 5, currentRotation, 'I');
-	refreshPanel(panel);
+	
+	int a = 0;
+	
+	void finalRefresh()
+	{
+		clearActiveBlock(panel);
+		putBlock(panel, currentPos[0]+a, currentPos[1], currentRotation, 'T');
+		refreshPanel(panel);
+	}
+	
+	while (1)
+	{
+		finalRefresh();
+		clock_t start = clock();
+		while(clock() - start < 800)
+		{	
+			if (GetAsyncKeyState(VK_DOWN) && !(checkTouchWall(panel) & 0x4)) 
+			{
+				delay(50);
+				break;
+			}
+			if (GetAsyncKeyState(VK_UP)) 
+			{
+				if (currentRotation < 3) currentRotation++;
+				else currentRotation = 0;
+				finalRefresh();
+			}
+			if (GetAsyncKeyState(VK_LEFT) && !(checkTouchWall(panel) & 0x8)) 
+			{
+				currentPos[1]--;
+				finalRefresh();
+			}
+			if (GetAsyncKeyState(VK_RIGHT) && !(checkTouchWall(panel) & 0x2))
+			{
+				currentPos[1]++;
+				finalRefresh();
+			}
+			delay(100);
+		}
+		
+		if (checkTouchWall(panel) & 0x4)
+		{
+			comfirmActiveBlocks(panel);
+			a = 0;
+			continue;
+		}
+		a++;
+	}
 }
