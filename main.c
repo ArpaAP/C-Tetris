@@ -1,132 +1,78 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <Windows.h>
-#define VERSION "1.0.0"
 
-// Copyright ⓒ 2021 황부연 All rights reserved.
-// 2021 호산고등학교 1학년 8반 12번 황부연
+/* run this program using the console pauser or add your own getch, system("pause") or input loop */
 
-const char *mainString;
-const int menuMax = 1;
-int mainScene(), gameScene();
-
-void setColor(unsigned short text, unsigned short back)
-{
-	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), text | (back << 4));
-}
+struct myGrade {
+	char *name;
+	int korean;
+	int english;
+	int math;
+};
 
 int main(int argc, char *argv[]) {
-	// 커서 제거 
-	CONSOLE_CURSOR_INFO cursorInfo = { 0, };
-    cursorInfo.dwSize = 1;
-    cursorInfo.bVisible = FALSE;
-    SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursorInfo);
-    
-    // 콘솔 세팅 
-	system("mode con cols=140 lines=40 | title TETRIS | color 9f");
+	/*
+	struct myGrade myClass[20];
+	myClass[0].name = "강모연";
+	myClass[1].name	= "서대영";
+	myClass[0].korean = 100;
+	myClass[1].math = 84;
 	
-	while (1)
+	printf("%s의 국어 점수는 %d\n", myClass[0].name, myClass[0].korean);
+	printf("%s의 수학 점수는 %d\n", myClass[1].name, myClass[1].math);
+	*/
+	/*
+	FILE *fp = NULL;
+	fp = fopen("charsample.txt", "w");
+	if (fp == NULL)
 	{
-		int menu = mainScene();
-		switch (menu)
-		{
-			case 0:
-				gameScene();
-				break;
-			case 1:
-				MessageBox(GetConsoleWindow(), "화살표 왼쪽, 오른쪽 키로 이동합니다.\n화살표 위쪽 키로 블럭을 회전합니다.\n화살표 아래 키로 블럭을 빠르게 내릴 수 있습니다.", "게임 방법", MB_ICONQUESTION | MB_OK);
-				break;
-		}
-		if (menu == 0) break;
+		printf("파일 열기 실패\n");
+		return 1;
 	}
+	fputc('l', fp);
+	fputc('o', fp);
+	fputc('v', fp);
+	fputc('e', fp);
+	fclose(fp);
+	*/
+	/*
+	FILE *fp = NULL;
+	int a;
+	fp = fopen("charsample.txt", "r");
+	if (fp == NULL)
+	{
+		printf("파일 열기 실패");
+		return 1;
+	}
+	while ((a = fgetc(fp))!= EOF) putchar(a);
+	fclose(fp);
+	*/
+	/*
+	FILE *fp;
+	int age = 18;
+	char name[10] = "홍길동";
+	fp = fopen("formsample.txt", "w");
+	if (fp == NULL)
+	{
+		printf("파일 열기 실패");
+		return 1;
+	}
+	fprintf(fp, "%d %s \n", age, name);
+	fclose(fp);
+	*/
+	FILE *fp;
+	int age;
+	char name[10];
+	fp = fopen("formsample.txt", "r");
+	if (fp == NULL)
+	{
+		printf("파일 열기 실패\n");
+		return 1;
+	}
+	fscanf(fp, "%d %s \n", &age, name);
+	printf("%d %s", age, name);
+	fclose(fp);
 	
+	printf("\n210508 프그 1-8 12번 황부연");
 	return 0;
-}
-
-const char *mainString = ""\
-"                                            ######## ######## ######## ########  ####  ######  \n"\
-"                                               ##    ##          ##    ##     ##  ##  ##    ## \n"\
-"                                               ##    ##          ##    ##     ##  ##  ##       \n"\
-"                                               ##    ######      ##    ########   ##   ######  \n"\
-"                                               ##    ##          ##    ##   ##    ##        ## \n"\
-"                                               ##    ##          ##    ##    ##   ##  ##    ## \n"\
-"                                               ##    ########    ##    ##     ## ####  ######  \n"\
-"                                                                                               \n"\
-"                                                           - C LANGUAGE EDITION -                ";
-
-int mainScene()
-{
-	system("cls");
-	// 메인 로고 출력 
-	printf("\n\n\n\n\n\n\n");
-	printf(mainString);
-	printf("\n\n\n\n\n");
-	
-	// 메뉴 출력 
-	printf("                                                               ");
-	setColor(0 ,15);
-	printf("  시 작 하 기  \n\n");
-	setColor(15, 9);
-	
-	printf("                                                               ");
-	printf("  게 임 방 법  \n\n");
-	
-	printf("\n\n\n\n\n\n\n\n                                                    ");
-	printf("▲: 위로  |  ▼: 아래로  |  엔터: 선택");
-	printf("\n\n\n\n\n\n  VER. %s - ⓒ 2021 Hwang Buyeon All rights reserved.", VERSION);
-	
-	int menu = 0;
-	
-	while (1)
-	{
-		_kbhit();
-		int firstKey = _getch();
-		
-		if (firstKey == 13) return menu; // 엔터키 누르면 종료 
-		
-		int lastKey = _getch();
-		
-		// 위쪽 화살표를 누르면 
-		if (firstKey == 224 && lastKey == 72)
-		{
-			if (menu >= menuMax) menu--;
-			else menu = menuMax;
-		}
-		
-		// 아래쪽 화살표를 누르면 
-		else if (firstKey == 224 && lastKey == 80)
-		{
-			if (menu < menuMax) menu++;
-			else menu = 0;
-		}
-		else continue;
-		
-		setColor(15 ,9);
-		system("cls");
-		
-		printf("\n\n\n\n\n\n\n");
-		printf(mainString);
-		printf("\n\n\n\n\n");
-	
-		printf("                                                               ");
-		if (menu == 0) setColor(0 ,15);
-		printf("  시 작 하 기  \n\n");
-		if (menu == 0) setColor(15 ,9);
-		
-		printf("                                                               ");
-		if (menu == 1) setColor(0 ,15);
-		printf("  게 임 방 법  \n\n");
-		if (menu == 1) setColor(15 ,9);
-		
-		printf("\n\n\n\n\n\n\n\n                                                    ");
-		printf("▲: 위로  |  ▼: 아래로  |  엔터: 선택");
-		printf("\n\n\n\n\n\n  VER. %s - ⓒ 2021 Hwang Buyeon All rights reserved.", VERSION);
-	}
-}
-
-int gameScene()
-{
-	system("cls");
-	system("color 0f");
-	return 0; 
-}
+} 
