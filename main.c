@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <Windows.h>
+#include <mmsystem.h>
 #define VERSION "1.0.0"
 #define PANEL_ROWS 20
 #define PANEL_COLS 10
@@ -89,22 +90,20 @@ int mainScene()
 	
 	while (1)
 	{
-		kbhit();
-		int firstKey = getch();
-		
-		if (firstKey == 13) return menu; // 엔터키 누르면 종료 
-		
-		int lastKey = getch();
+		_kbhit();
+		_getch();
+		if (GetAsyncKeyState(VK_RETURN)) return menu;
+		_getch();
 		
 		// 위쪽 화살표를 누르면  
-		if (firstKey == 224 && lastKey == 72)
+		if (GetAsyncKeyState(VK_UP))
 		{
 			if (menu >= menuMax) menu--;
 			else menu = menuMax;
 		}
 		
 		// 아래쪽 화살표를 누르면 
-		else if (firstKey == 224 && lastKey == 80)
+		else if (GetAsyncKeyState(VK_DOWN))
 		{
 			if (menu < menuMax) menu++;
 			else menu = 0;
@@ -140,6 +139,37 @@ void putBlock(int (*panel)[PANEL_COLS], int row, int col, int rotation, char blo
 {
 	switch (block)
 	{
+		case 'I':
+			switch (rotation)
+			{
+				case 0:
+					panel[row][col-1] = 2;
+					panel[row][col] = 2;
+					panel[row][col+1] = 2;
+					panel[row][col+2] = 2;
+					break;
+				case 2:
+					panel[row+1][col-1] = 2;
+					panel[row+1][col] = 2;
+					panel[row+1][col+1] = 2;
+					panel[row+1][col+2] = 2;
+					break;
+				case 1:
+					panel[row-1][col+1] = 2;
+					panel[row][col+1] = 2;
+					panel[row+1][col+1] = 2;
+					panel[row+2][col+1] = 2;
+					break;
+				case 3:
+					panel[row-1][col] = 2;
+					panel[row][col] = 2;
+					panel[row+1][col] = 2;
+					panel[row+2][col] = 2;
+					break;
+			}
+			
+			break;
+			
 		case 'T':
 			switch (rotation)
 			{
@@ -275,7 +305,7 @@ void gameScene()
 	system("cls");
 	system("mode con cols=100 lines=40 | color 0f");
 	int panel[PANEL_ROWS][PANEL_COLS] = {0};
-	char currentBlock;
+	char currentBlock = 'I';
 	int currentPos[2] = {1, 4}; // 현재 블록 좌표 
 	int currentRotation = 0; // 현재 블록 회전각(시계방향으로 0, 1, 2, 3)
 	
@@ -286,12 +316,12 @@ void gameScene()
 	void finalRefresh()
 	{
 		clearActiveBlock(panel);
-		putBlock(panel, currentPos[0]+a, currentPos[1], currentRotation, 'T');
+		putBlock(panel, currentPos[0]+a, currentPos[1], currentRotation, currentBlock);
 		refreshPanel(panel);
 	}
 	
 	while (1)
-	{
+	{	
 		finalRefresh();
 		clock_t start = clock();
 		while(clock() - start < 800)
@@ -303,6 +333,14 @@ void gameScene()
 			}
 			if (GetAsyncKeyState(VK_UP)) 
 			{
+				switch (currentBlock)
+				{
+					case 'T':
+						if (currentRotation == 1 && checkTouchWall(panel) & 0x8) currentPos[1]++;
+						if (currentRotation == 3 && checkTouchWall(panel) & 0x2) currentPos[1]--;
+						break;
+				}
+				
 				if (currentRotation < 3) currentRotation++;
 				else currentRotation = 0;
 				finalRefresh();
@@ -324,6 +362,9 @@ void gameScene()
 		{
 			comfirmActiveBlocks(panel);
 			a = 0;
+			currentPos[0] = 1;
+			currentPos[1] = 4;
+			currentRotation = 0;
 			continue;
 		}
 		a++;
