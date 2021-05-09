@@ -90,7 +90,6 @@ int mainScene()
 	
 	while (1)
 	{
-		_kbhit();
 		_getch();
 		if (GetAsyncKeyState(VK_RETURN)) return menu;
 		_getch();
