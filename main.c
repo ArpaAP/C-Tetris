@@ -12,6 +12,7 @@
 
 const char *mainString;
 const int menuMax = 1;
+const char BLOCKS[7] = {'I', 'J', 'L', 'O', 'S', 'T', 'Z'};
 int mainScene();
 void gameScene();
 
@@ -142,31 +143,118 @@ void putBlock(int (*panel)[PANEL_COLS], int row, int col, int rotation, char blo
 			switch (rotation)
 			{
 				case 0:
+				case 2:
 					panel[row][col-1] = 2;
 					panel[row][col] = 2;
 					panel[row][col+1] = 2;
 					panel[row][col+2] = 2;
 					break;
-				case 2:
-					panel[row+1][col-1] = 2;
+				case 1:
+				case 3:
+					panel[row-2][col] = 2;
+					panel[row-1][col] = 2;
+					panel[row][col] = 2;
 					panel[row+1][col] = 2;
-					panel[row+1][col+1] = 2;
-					panel[row+1][col+2] = 2;
+					break;
+			}
+			
+			break;
+			
+		case 'J':
+			switch (rotation)
+			{
+				case 0:
+					panel[row][col-1] = 2;
+					panel[row][col] = 2;
+					panel[row][col+1] = 2;
+					panel[row-1][col-1] = 2;
 					break;
 				case 1:
 					panel[row-1][col+1] = 2;
+					panel[row-1][col] = 2;
+					panel[row][col] = 2;
+					panel[row+1][col] = 2;
+					break;
+				case 2:
+					panel[row][col-1] = 2;
+					panel[row][col] = 2;
 					panel[row][col+1] = 2;
 					panel[row+1][col+1] = 2;
-					panel[row+2][col+1] = 2;
 					break;
 				case 3:
 					panel[row-1][col] = 2;
 					panel[row][col] = 2;
 					panel[row+1][col] = 2;
-					panel[row+2][col] = 2;
+					panel[row+1][col-1] = 2;
 					break;
 			}
+			break;
 			
+		case 'L':
+			switch (rotation)
+			{
+				case 0:
+					panel[row][col-1] = 2;
+					panel[row][col] = 2;
+					panel[row][col+1] = 2;
+					panel[row-1][col+1] = 2;
+					break;
+				case 1:
+					panel[row-1][col] = 2;
+					panel[row][col] = 2;
+					panel[row+1][col] = 2;
+					panel[row+1][col+1] = 2;
+					break;
+				case 2:
+					panel[row][col-1] = 2;
+					panel[row][col] = 2;
+					panel[row][col+1] = 2;
+					panel[row+1][col-1] = 2;
+					break;
+				case 3:
+					panel[row-1][col] = 2;
+					panel[row][col] = 2;
+					panel[row+1][col] = 2;
+					panel[row-1][col-1] = 2;
+					break;
+			}
+			break;
+			
+		case 'O':
+			panel[row][col] = 2;
+			panel[row][col+1] = 2;
+			panel[row+1][col] = 2;
+			panel[row+1][col+1] = 2;
+			break;
+		
+		case 'S':
+			switch (rotation)
+			{
+				case 0:
+					panel[row][col] = 2;
+					panel[row][col-1] = 2;
+					panel[row-1][col] = 2;
+					panel[row-1][col+1] = 2;
+					break;
+				case 1:
+					panel[row][col] = 2;
+					panel[row-1][col] = 2;
+					panel[row][col+1] = 2;
+					panel[row+1][col+1] = 2;
+					break;
+				case 2:
+					panel[row][col] = 2;
+					panel[row][col+1] = 2;
+					panel[row+1][col] = 2;
+					panel[row+1][col-1] = 2;
+					break;
+				case 3:
+					panel[row][col] = 2;
+					panel[row+1][col] = 2;
+					panel[row][col-1] = 2;
+					panel[row-1][col-1] = 2;
+					break;
+			}
 			break;
 			
 		case 'T':
@@ -200,6 +288,33 @@ void putBlock(int (*panel)[PANEL_COLS], int row, int col, int rotation, char blo
 			
 			break;
 			
+		case 'Z':
+			switch (rotation)
+			{
+				case 0:
+					panel[row][col] = 2;
+					panel[row][col+1] = 2;
+					panel[row-1][col] = 2;
+					panel[row-1][col-1] = 2;
+					break;
+				case 1:
+					panel[row][col] = 2;
+					panel[row+1][col] = 2;
+					panel[row][col+1] = 2;
+					panel[row-1][col+1] = 2;
+					break;
+				case 2:
+					panel[row][col] = 2;
+					panel[row][col-1] = 2;
+					panel[row+1][col] = 2;
+					panel[row+1][col+1] = 2;
+					break;
+				case 3:
+					panel[row][col] = 2;
+					panel[row-1][col] = 2;
+					panel[row][col-1] = 2;
+					panel[row+1][col-1] = 2;
+			}
 	}
 }
 
@@ -266,8 +381,67 @@ int checkTouchWall(int (*panel)[PANEL_COLS])
 			}
 		}
 	}
+
+	int width = maxCol - minCol + 1;
+	int height = maxRow - minRow + 1;
 	
 	int result = 0;
+	
+	// 아래에 블록 있는지 검사.
+	for (row = 0; row < height; row++) 
+	{
+		for (col = 0; col < width; col++)
+		{
+			if (panel[row + minRow][col + minCol] == 2 && panel[row + minRow + 1][col + minCol] == 1)
+			{
+				result |= 0x4;
+				break;
+			}
+		}
+		if (col != width) break;
+	}
+	
+	// 왼쪽에 블록 있는지 검사.
+	for (row = 0; row < height; row++) 
+	{
+		for (col = 0; col < width; col++)
+		{
+			if (panel[row + minRow][col + minCol] == 2 && panel[row + minRow][col + minCol - 1] == 1)
+			{
+				result |= 0x8;
+				break;
+			}
+		}
+		if (col != width) break;
+	}
+	
+	// 오른쪽에 블록 있는지 검사.
+	for (row = 0; row < height; row++) 
+	{
+		for (col = 0; col < width; col++)
+		{
+			if (panel[row + minRow][col + minCol] == 2 && panel[row + minRow][col + minCol + 1] == 1)
+			{
+				result |= 0x2;
+				break;
+			}
+		}
+		if (col != width) break;
+	}
+	
+	// 위에 블록 있는지 검사.
+	for (row = 0; row < height; row++) 
+	{
+		for (col = 0; col < width; col++)
+		{
+			if (panel[row + minRow][col + minCol] == 2 && panel[row + minRow - 1][col + minCol] == 1)
+			{
+				result |= 0x1;
+				break;
+			}
+		}
+		if (col != width) break;
+	}
 	
 	// minRow가 0인 경우, 즉 블록이 천장벽과 닿는 경우는 구현하지 않음. 
 	if (minCol == 0) // 왼쪽 벽과 닿는 경우 
@@ -299,12 +473,35 @@ void comfirmActiveBlocks(int (*panel)[PANEL_COLS])
 	}
 }
 
+void clearLinedBlocks(int (*panel)[PANEL_COLS])
+{
+	int row, col;	
+	for (row = 0; row < PANEL_ROWS; row++)
+	{
+		for (col = 0; col < PANEL_COLS; col++)
+		{
+			if (panel[row][col] != 1) break;
+		}
+		if (col != PANEL_COLS) continue;
+		else
+		{
+			int icol;
+			for (icol = 0; icol < PANEL_COLS; icol++)
+			{
+				panel[row][icol] = 0;
+			}
+		}
+	}
+}
+
 void gameScene()
 {
 	system("cls");
 	system("mode con cols=100 lines=40 | color 0f");
 	int panel[PANEL_ROWS][PANEL_COLS] = {0};
-	char currentBlock = 'I';
+	srand((unsigned int)time(NULL));
+	int randNum = rand() % 7;
+	char currentBlock = BLOCKS[randNum];
 	int currentPos[2] = {1, 4}; // 현재 블록 좌표 
 	int currentRotation = 0; // 현재 블록 회전각(시계방향으로 0, 1, 2, 3)
 	
@@ -338,6 +535,12 @@ void gameScene()
 						if (currentRotation == 1 && checkTouchWall(panel) & 0x8) currentPos[1]++;
 						if (currentRotation == 3 && checkTouchWall(panel) & 0x2) currentPos[1]--;
 						break;
+					case 'I':
+						if ((currentRotation == 1 || currentRotation == 3) && checkTouchWall(panel) & 0x8) currentPos[1]++;
+						if ((currentRotation == 1 || currentRotation == 3) && checkTouchWall(panel) & 0x2) currentPos[1] -= 2;
+						if ((currentRotation == 0 || currentRotation == 2) && checkTouchWall(panel) & 0x4) currentPos[0]--;
+						if ((currentRotation == 1 || currentRotation == 3) && currentPos[1] == 8) currentPos[1]--;
+						break;
 				}
 				
 				if (currentRotation < 3) currentRotation++;
@@ -354,16 +557,18 @@ void gameScene()
 				currentPos[1]++;
 				finalRefresh();
 			}
-			delay(100);
+			delay(120);
 		}
-		
+
 		if (checkTouchWall(panel) & 0x4)
 		{
 			comfirmActiveBlocks(panel);
+			clearLinedBlocks(panel);
 			a = 0;
 			currentPos[0] = 1;
 			currentPos[1] = 4;
 			currentRotation = 0;
+			currentBlock = BLOCKS[rand() % 7];
 			continue;
 		}
 		a++;
