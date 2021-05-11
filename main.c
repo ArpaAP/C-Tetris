@@ -16,10 +16,19 @@ const char BLOCKS[7] = {'I', 'J', 'L', 'O', 'S', 'T', 'Z'};
 int mainScene();
 void gameScene();
 
+int score;
+char nextBlock;
+
 void delay(clock_t s)
 {
   clock_t start = clock();
   while(clock() - start < s);
+}
+
+void gotoxy(int x, int y)
+{
+	COORD pos = {x , y};
+	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 }
 
 void setColor(unsigned short text, unsigned short back)
@@ -34,19 +43,20 @@ int main(int argc, char *argv[]) {
     cursorInfo.bVisible = FALSE;
     SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursorInfo);
     
-    // 콘솔 세팅 
-	system("mode con cols=140 lines=40 | title TETRIS | color 9f");
-	
+	// 랜덤 시드 세팅
+	srand((unsigned int)time(NULL)); 
+		
 	while (1)
-	{
+	{	
 		int menu = mainScene();
 		switch (menu)
 		{
 			case 0:
 				gameScene();
-				break;
+				continue;
 			case 1:
 				MessageBox(GetConsoleWindow(), "화살표 왼쪽, 오른쪽 키로 이동합니다.\n화살표 위쪽 키로 블럭을 회전합니다.\n화살표 아래 키로 블럭을 빠르게 내릴 수 있습니다.", "게임 방법", MB_ICONQUESTION | MB_OK);
+				delay(50);
 				break;
 		}
 		if (menu == 0) break;
@@ -68,32 +78,32 @@ const char *mainString = ""\
 
 int mainScene()
 {
+	system("mode con cols=140 lines=40 | title TETRIS | color 9f");
 	system("cls");
 	// 메인 로고 출력 
-	printf("\n\n\n\n\n\n\n");
+	gotoxy(0, 7);
 	printf(mainString);
-	printf("\n\n\n\n\n");
+	
+	gotoxy(63, 20);
 	
 	// 메뉴 출력 
-	printf("                                                               ");
 	setColor(0 ,15);
-	printf("  시 작 하 기  \n\n");
+	printf("  시 작 하 기  ");
 	setColor(15, 9);
 	
-	printf("                                                               ");
-	printf("  게 임 방 법  \n\n");
+	gotoxy(63, 22);
+	printf("  게 임 방 법  ");
 	
-	printf("\n\n\n\n\n\n\n\n                                                    ");
+	gotoxy(52, 32);
 	printf("▲: 위로  |  ▼: 아래로  |  엔터: 선택");
-	printf("\n\n\n\n\n\n  VER. %s - ⓒ 2021 Hwang Buyeon All rights reserved.", VERSION);
+	gotoxy(2, 38);
+	printf("VER. %s - ⓒ 2021 Hwang Buyeon All rights reserved.", VERSION);
 	
 	int menu = 0;
 	
 	while (1)
 	{
-		_getch();
 		if (GetAsyncKeyState(VK_RETURN)) return menu;
-		_getch();
 		
 		// 위쪽 화살표를 누르면  
 		if (GetAsyncKeyState(VK_UP))
@@ -111,26 +121,26 @@ int mainScene()
 		else continue;
 		
 		setColor(15 ,9);
-		COORD pos = {0 , 0};
-		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
 		
-		printf("\n\n\n\n\n\n\n");
+		gotoxy(0, 7);
 		printf(mainString);
-		printf("\n\n\n\n\n");
 	
-		printf("                                                               ");
+		gotoxy(63, 20);
 		if (menu == 0) setColor(0 ,15);
-		printf("  시 작 하 기  \n\n");
+		printf("  시 작 하 기  ");
 		if (menu == 0) setColor(15 ,9);
 		
-		printf("                                                               ");
+		gotoxy(63, 22);
 		if (menu == 1) setColor(0 ,15);
-		printf("  게 임 방 법  \n\n");
+		printf("  게 임 방 법  ");
 		if (menu == 1) setColor(15 ,9);
 		
-		printf("\n\n\n\n\n\n\n\n                                                    ");
+		gotoxy(52, 32);
 		printf("▲: 위로  |  ▼: 아래로  |  엔터: 선택");
-		printf("\n\n\n\n\n\n  VER. %s - ⓒ 2021 Hwang Buyeon All rights reserved.", VERSION);
+		gotoxy(2, 38);
+		printf("VER. %s - ⓒ 2021 Hwang Buyeon All rights reserved.", VERSION);
+		
+		delay(180);
 	}
 }
 
@@ -334,10 +344,9 @@ void clearActiveBlock(int (*panel)[PANEL_COLS])
 // 현재 패널을 읽어들여 새로고침합니다. 
 void refreshPanel(int (*panel)[PANEL_COLS]) 
 {
-	COORD pos = {0 , 0};
-	SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), pos);
+	// 게임 패널 표시 
+	gotoxy(0, 8);
 	char *tsp = "                       ";
-	printf("\n\n\n\n\n\n\n\n\n");
 	printf("%s▩▩▩▩▩▩▩▩▩▩▩▩\n", tsp);
 	
 	int row, col;
@@ -353,6 +362,68 @@ void refreshPanel(int (*panel)[PANEL_COLS])
 		printf("▩\n");
 	}
 	printf("%s▩▩▩▩▩▩▩▩▩▩▩▩\n", tsp);
+	
+	// 다음 블록 표시
+	gotoxy(58, 8);
+	printf("┏━━━  다음블록 ━━━┓");
+	
+	int i;
+	for (i = 9; i < 15; i++) 
+	{
+		gotoxy(58, i);
+		printf("┃                 ┃");
+	
+	}
+	gotoxy(58, 15);
+	printf("┗━━━━━━━━━━━━━━━━━┛");
+	
+	gotoxy(64, 11);
+	switch(nextBlock) 
+	{
+		case 'I':
+			printf("■■■■");
+			break;
+		case 'J':
+			printf("■");
+			gotoxy(64, 12);
+			printf("■■■");
+			break;
+		case 'L':
+			printf("    ■");
+			gotoxy(64, 12);
+			printf("■■■");
+			break;
+		case 'O':
+			printf("  ■■");
+			gotoxy(64, 12);
+			printf("  ■■");
+			break;
+		case 'S':
+			printf("  ■■");
+			gotoxy(64, 12);
+			printf("■■  ");
+			break;
+		case 'T':
+			printf("  ■  ");
+			gotoxy(64, 12);
+			printf("■■■");
+			break;
+		case 'Z':
+			printf("■■  ");
+			gotoxy(64, 12);
+			printf("  ■■");
+			break;
+	}
+	
+	gotoxy(58, 17);
+	printf("┏━━━━━  점수 ━━━━━┓");
+	gotoxy(58, 18);
+	printf("┃                 ┃");
+	gotoxy(58, 19);
+	printf("┗━━━━━━━━━━━━━━━━━┛");
+	
+	gotoxy(60, 18);
+	printf("%d", score);
 }
 
 /*
@@ -475,33 +546,46 @@ void comfirmActiveBlocks(int (*panel)[PANEL_COLS])
 
 void clearLinedBlocks(int (*panel)[PANEL_COLS])
 {
-	int row, col;	
-	for (row = 0; row < PANEL_ROWS; row++)
+	int row, col, deleted;
+	for (row = PANEL_ROWS; row > 0; row--)
 	{
 		for (col = 0; col < PANEL_COLS; col++)
 		{
-			if (panel[row][col] != 1) break;
+			if (panel[row + deleted][col] != 1) break;
 		}
 		if (col != PANEL_COLS) continue;
 		else
 		{
-			int icol;
-			for (icol = 0; icol < PANEL_COLS; icol++)
+			//row: 찾은 줄넘버 
+			int irow, icol;
+			for (irow = 0; irow < row; irow++)
 			{
-				panel[row][icol] = 0;
+				for (icol = 0; icol < PANEL_COLS; icol++)
+				{
+					panel[row + deleted - irow][icol] = panel[row + deleted - irow - 1][icol];
+				}
 			}
+			deleted += 1;
+			score += 100;
 		}
 	}
-}
+} 
 
 void gameScene()
 {
 	system("cls");
 	system("mode con cols=100 lines=40 | color 0f");
+	
+	score = 0;
+	gotoxy(11, 36);
+	printf("◁▷: 이동  |  △: 회전  |  ▽: 내리기  |  SPACE : 즉시놓기  |  ESC : 메인으로");
+	
 	int panel[PANEL_ROWS][PANEL_COLS] = {0};
-	srand((unsigned int)time(NULL));
-	int randNum = rand() % 7;
-	char currentBlock = BLOCKS[randNum];
+	char currentBlock = BLOCKS[rand() % 7];
+	
+	do nextBlock = BLOCKS[rand() % 7];
+	while (nextBlock == currentBlock);
+	
 	int currentPos[2] = {1, 4}; // 현재 블록 좌표 
 	int currentRotation = 0; // 현재 블록 회전각(시계방향으로 0, 1, 2, 3)
 	
@@ -527,25 +611,35 @@ void gameScene()
 				delay(50);
 				break;
 			}
-			if (GetAsyncKeyState(VK_UP)) 
+			if (GetAsyncKeyState(VK_UP) && !(checkTouchWall(panel) & 0x4))
 			{
 				switch (currentBlock)
 				{
-					case 'T':
-						if (currentRotation == 1 && checkTouchWall(panel) & 0x8) currentPos[1]++;
-						if (currentRotation == 3 && checkTouchWall(panel) & 0x2) currentPos[1]--;
-						break;
 					case 'I':
 						if ((currentRotation == 1 || currentRotation == 3) && checkTouchWall(panel) & 0x8) currentPos[1]++;
 						if ((currentRotation == 1 || currentRotation == 3) && checkTouchWall(panel) & 0x2) currentPos[1] -= 2;
 						if ((currentRotation == 0 || currentRotation == 2) && checkTouchWall(panel) & 0x4) currentPos[0]--;
 						if ((currentRotation == 1 || currentRotation == 3) && currentPos[1] == 8) currentPos[1]--;
 						break;
+					case 'J':
+					case 'L':
+						if (currentRotation == 1 && checkTouchWall(panel) & 0x8) currentPos[1]++;
+						if (currentRotation == 3 && checkTouchWall(panel) & 0x2) currentPos[1]--;
+						break;
+					case 'S':
+					case 'Z':
+						if (currentRotation == 1 && checkTouchWall(panel) & 0x8) currentPos[1]++;
+						break;
+					case 'T':
+						if (currentRotation == 1 && checkTouchWall(panel) & 0x8) currentPos[1]++;
+						if (currentRotation == 3 && checkTouchWall(panel) & 0x2) currentPos[1]--;
+						break;
 				}
 				
 				if (currentRotation < 3) currentRotation++;
 				else currentRotation = 0;
 				finalRefresh();
+				delay(50);
 			}
 			if (GetAsyncKeyState(VK_LEFT) && !(checkTouchWall(panel) & 0x8)) 
 			{
@@ -557,6 +651,18 @@ void gameScene()
 				currentPos[1]++;
 				finalRefresh();
 			}
+			if (GetAsyncKeyState(VK_SPACE))
+			{
+				while (!(checkTouchWall(panel) & 0x4))
+				{
+					currentPos[0]++;
+					clearActiveBlock(panel);
+					putBlock(panel, currentPos[0]+a, currentPos[1], currentRotation, currentBlock);
+				}
+				finalRefresh();
+				delay(120);
+			}
+			if (GetAsyncKeyState(VK_ESCAPE)) return;
 			delay(120);
 		}
 
@@ -568,7 +674,10 @@ void gameScene()
 			currentPos[0] = 1;
 			currentPos[1] = 4;
 			currentRotation = 0;
-			currentBlock = BLOCKS[rand() % 7];
+			
+			currentBlock = nextBlock;
+			do nextBlock = BLOCKS[rand() % 7];
+			while (nextBlock == currentBlock);
 			continue;
 		}
 		a++;
