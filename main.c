@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <Windows.h>
-#include <mmsystem.h>
 #define VERSION "1.0.0"
 #define PANEL_ROWS 20
 #define PANEL_COLS 10
