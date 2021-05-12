@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <time.h>
 #include <Windows.h>
+#include<mmsystem.h> 
+#pragma comment(lib,"winmm.lib")
 #define VERSION "1.0.0"
 #define PANEL_ROWS 20
 #define PANEL_COLS 10
@@ -10,11 +12,11 @@
 // 2021 호산고등학교 1학년 8반 12번 황부연
 
 const char *mainString;
-const int menuMax = 1;
 const char BLOCKS[7] = {'I', 'J', 'L', 'O', 'S', 'T', 'Z'};
 int mainScene();
 void gameScene();
 
+HWND w;
 int score;
 char nextBlock;
 
@@ -35,16 +37,23 @@ void setColor(unsigned short text, unsigned short back)
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), text | (back << 4));
 }
 
+// 창이 활성 상태인지 아닌지 확인 
+int windowActive()
+{
+	return w == GetForegroundWindow();
+}
+
 int main(int argc, char *argv[]) {
+	w = GetForegroundWindow();
+
 	// 커서 제거 
 	CONSOLE_CURSOR_INFO cursorInfo = { 0, };
     cursorInfo.dwSize = 1;
     cursorInfo.bVisible = FALSE;
     SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cursorInfo);
     
-	// 랜덤 시드 세팅
 	srand((unsigned int)time(NULL)); 
-		
+	
 	while (1)
 	{	
 		int menu = mainScene();
@@ -54,8 +63,17 @@ int main(int argc, char *argv[]) {
 				gameScene();
 				continue;
 			case 1:
-				MessageBox(GetConsoleWindow(), "화살표 왼쪽, 오른쪽 키로 이동합니다.\n화살표 위쪽 키로 블럭을 회전합니다.\n화살표 아래 키로 블럭을 빠르게 내릴 수 있습니다.", "게임 방법", MB_ICONQUESTION | MB_OK);
-				delay(50);
+				MessageBox(
+					GetConsoleWindow(), 
+					""\
+					"화살표 왼쪽, 오른쪽 키로 이동합니다.\n\n"\
+					"화살표 위쪽 키로 블럭을 회전합니다.\n\n"\
+					"화살표 아래 키로 블럭을 빠르게 내릴 수 있습니다.\n\n"\
+					"스페이스 키로 블럭을 바로 놓을 수 있습니다.",
+					"게임 방법", 
+					MB_ICONQUESTION | MB_OK
+				);
+				while (windowActive() && GetAsyncKeyState(VK_RETURN));
 				break;
 		}
 		if (menu == 0) break;
@@ -79,6 +97,7 @@ int mainScene()
 {
 	system("mode con cols=140 lines=40 | title TETRIS | color 9f");
 	system("cls");
+	PlaySound (TEXT("main.wav"), NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
 	// 메인 로고 출력 
 	gotoxy(0, 7);
 	printf(mainString);
@@ -98,21 +117,26 @@ int mainScene()
 	gotoxy(2, 38);
 	printf("VER. %s - ⓒ 2021 Hwang Buyeon All rights reserved.", VERSION);
 	
+	const int menuMax = 1;
 	int menu = 0;
 	
 	while (1)
 	{
-		if (GetAsyncKeyState(VK_RETURN)) return menu;
+		if (windowActive() && GetAsyncKeyState(VK_RETURN))
+		{
+			while (windowActive() && GetAsyncKeyState(VK_RETURN));
+			return menu;
+		}
 		
 		// 위쪽 화살표를 누르면  
-		if (GetAsyncKeyState(VK_UP))
+		if (windowActive() && GetAsyncKeyState(VK_UP))
 		{
 			if (menu >= menuMax) menu--;
 			else menu = menuMax;
 		}
 		
 		// 아래쪽 화살표를 누르면 
-		else if (GetAsyncKeyState(VK_DOWN))
+		else if (windowActive() && GetAsyncKeyState(VK_DOWN))
 		{
 			if (menu < menuMax) menu++;
 			else menu = 0;
@@ -423,6 +447,9 @@ void refreshPanel(int (*panel)[PANEL_COLS])
 	
 	gotoxy(60, 18);
 	printf("%d", score);
+	
+	gotoxy(11, 36);
+	printf("◁▷: 이동  |  △: 회전  |  ▽: 내리기  |  SPACE : 즉시놓기  |  ESC : 메인으로");
 }
 
 /*
@@ -545,39 +572,110 @@ void comfirmActiveBlocks(int (*panel)[PANEL_COLS])
 
 void clearLinedBlocks(int (*panel)[PANEL_COLS])
 {
-	int row, col, deleted;
-	for (row = PANEL_ROWS; row > 0; row--)
+	int row, col;
+	
+	while (1)
 	{
-		for (col = 0; col < PANEL_COLS; col++)
+		for (row = PANEL_ROWS; row > 0; row--)
 		{
-			if (panel[row + deleted][col] != 1) break;
-		}
-		if (col != PANEL_COLS) continue;
-		else
-		{
-			//row: 찾은 줄넘버 
-			int irow, icol;
-			for (irow = 0; irow < row; irow++)
+			for (col = 0; col < PANEL_COLS; col++)
 			{
-				for (icol = 0; icol < PANEL_COLS; icol++)
-				{
-					panel[row + deleted - irow][icol] = panel[row + deleted - irow - 1][icol];
-				}
+				if (panel[row][col] != 1) break;
 			}
-			deleted += 1;
-			score += 100;
+			if (col != PANEL_COLS) continue;
+			else
+			{
+				//row: 찾은 줄넘버 
+				int irow, icol;
+				for (irow = 0; irow < row; irow++)
+				{
+					for (icol = 0; icol < PANEL_COLS; icol++)
+					{
+						panel[row - irow][icol] = panel[row - irow - 1][icol];
+					}
+				}
+				score += 100;
+				break;
+			}
 		}
+		if (row == 0) break;
 	}
-} 
+}
+
+int gameOver()
+{	
+	PlaySound (TEXT("gameover.wav"), NULL, SND_FILENAME | SND_ASYNC);
+	gotoxy(18, 11);
+	setColor(12, 0);
+	printf(" ┏━━━━━━━━━━━━━━━━━━━━━━━━  게임 오버 ━━━━━━━━━━━━━━━━━━━━━━━━┓");
+	
+	int i;
+	for (i = 12; i < 27; i++)
+	{
+		gotoxy(18, i);
+		printf(" ┃                                                            ┃");
+	}
+	gotoxy(18, 27);
+	printf(" ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛");
+	
+	gotoxy(34, 16);
+	setColor(15, 0);
+	printf("더 이상 블록을 놓을 수 없습니다!");
+	
+	gotoxy(42, 20);
+	setColor(0 ,15);
+	printf("  다시 플레이  ");
+	setColor(15, 0);
+	
+	gotoxy(42, 22);
+	printf("    메인으로    ");
+	
+	const int menuMax = 1;
+	int menu = 0;
+	
+	while (1)
+	{
+		if (windowActive() && GetAsyncKeyState(VK_RETURN))
+		{
+			while (windowActive() && GetAsyncKeyState(VK_RETURN));
+			return menu;
+		}
+		
+		// 위쪽 화살표를 누르면  
+		if (windowActive() && GetAsyncKeyState(VK_UP))
+		{
+			if (menu >= menuMax) menu--;
+			else menu = menuMax;
+		}
+		
+		// 아래쪽 화살표를 누르면 
+		else if (windowActive() && GetAsyncKeyState(VK_DOWN))
+		{
+			if (menu < menuMax) menu++;
+			else menu = 0;
+		}
+		else continue;
+		
+		gotoxy(42, 20);
+		if (menu == 0) setColor(0, 15);
+		printf("  다시 플레이  ");
+		setColor(15, 0);
+		
+		gotoxy(42, 22);
+		if (menu == 1) setColor(0, 15);
+		printf("    메인으로    ");
+		
+		delay(180);
+	}
+}
 
 void gameScene()
 {
 	system("cls");
 	system("mode con cols=100 lines=40 | color 0f");
+	PlaySound (TEXT("bgm.wav"), NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
 	
 	score = 0;
-	gotoxy(11, 36);
-	printf("◁▷: 이동  |  △: 회전  |  ▽: 내리기  |  SPACE : 즉시놓기  |  ESC : 메인으로");
 	
 	int panel[PANEL_ROWS][PANEL_COLS] = {0};
 	char currentBlock = BLOCKS[rand() % 7];
@@ -587,8 +685,6 @@ void gameScene()
 	
 	int currentPos[2] = {1, 4}; // 현재 블록 좌표 
 	int currentRotation = 0; // 현재 블록 회전각(시계방향으로 0, 1, 2, 3)
-	
-	refreshPanel(panel);
 	
 	int a = 0;
 	
@@ -601,16 +697,17 @@ void gameScene()
 	
 	while (1)
 	{	
+		int movingFloor = 0;
 		finalRefresh();
 		clock_t start = clock();
-		while(clock() - start < 800)
+		while(clock() - start < (movingFloor ? 1000 : 800))
 		{	
-			if (GetAsyncKeyState(VK_DOWN) && !(checkTouchWall(panel) & 0x4)) 
+			if (windowActive() && GetAsyncKeyState(VK_DOWN) && !(checkTouchWall(panel) & 0x4)) 
 			{
 				delay(50);
 				break;
 			}
-			if (GetAsyncKeyState(VK_UP) && !(checkTouchWall(panel) & 0x4))
+			if (windowActive() && GetAsyncKeyState(VK_UP) && !(checkTouchWall(panel) & 0x4))
 			{
 				switch (currentBlock)
 				{
@@ -640,17 +737,17 @@ void gameScene()
 				finalRefresh();
 				delay(50);
 			}
-			if (GetAsyncKeyState(VK_LEFT) && !(checkTouchWall(panel) & 0x8)) 
+			if (windowActive() && GetAsyncKeyState(VK_LEFT) && !(checkTouchWall(panel) & 0x8)) 
 			{
 				currentPos[1]--;
 				finalRefresh();
 			}
-			if (GetAsyncKeyState(VK_RIGHT) && !(checkTouchWall(panel) & 0x2))
+			if (windowActive() && GetAsyncKeyState(VK_RIGHT) && !(checkTouchWall(panel) & 0x2))
 			{
 				currentPos[1]++;
 				finalRefresh();
 			}
-			if (GetAsyncKeyState(VK_SPACE))
+			if (windowActive() && GetAsyncKeyState(VK_SPACE))
 			{
 				while (!(checkTouchWall(panel) & 0x4))
 				{
@@ -659,16 +756,53 @@ void gameScene()
 					putBlock(panel, currentPos[0]+a, currentPos[1], currentRotation, currentBlock);
 				}
 				finalRefresh();
-				delay(120);
+				movingFloor = 1;
 			}
-			if (GetAsyncKeyState(VK_ESCAPE)) return;
+			if (windowActive() && GetAsyncKeyState(VK_ESCAPE)) return;
 			delay(120);
 		}
 
 		if (checkTouchWall(panel) & 0x4)
-		{
+		{	
 			comfirmActiveBlocks(panel);
 			clearLinedBlocks(panel);
+			
+			int i;
+			for (i = 0; i < PANEL_COLS; i++)
+			{
+				if (panel[1][i] != 0)
+				{
+					setColor(7, 0);
+					refreshPanel(panel);
+					delay(300);
+					
+					setColor(8, 0);
+					refreshPanel(panel);
+					delay(600);
+					
+					int menu = gameOver();
+					
+					// 게임 재시작 
+					if (menu == 0) 
+					{
+						int j, k;
+						for (j = 0; j < PANEL_ROWS; j++)
+						{
+							for (k = 0; k < PANEL_COLS; k++)
+							{
+								panel[j][k] = 0;
+							}
+						}
+						
+						system("cls");
+						score = 0;
+						
+						break;
+					}
+					else return;
+				}
+			}
+			
 			a = 0;
 			currentPos[0] = 1;
 			currentPos[1] = 4;
