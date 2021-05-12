@@ -796,6 +796,7 @@ void gameScene()
 						
 						system("cls");
 						score = 0;
+						PlaySound (TEXT("bgm.wav"), NULL, SND_FILENAME | SND_ASYNC | SND_LOOP);
 						
 						break;
 					}
